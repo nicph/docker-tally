@@ -1,5 +1,6 @@
-# services
-
+# {{now}}
+# trigger event : {{coalesce .Type "Startup"}} {{.Status}}
+# Services:
 {{ $promnet:="prometheus-net" -}}
 {{ $n:=networkInspect $promnet -}}
 {{range services -}}
@@ -22,20 +23,22 @@
   {{- end}}
 {{end -}}
 {{end}}
-# tasks
+# Tasks:
 
 {{range tasks -}}
 {{if index .Spec.ContainerSpec.Labels "prometheus.port" -}}
+{{ $hostname:=(nodeInspect .NodeID).Description.Hostname|toPrettyJson}}
 {{ $serviceName := (serviceInspect .ServiceID).Spec.Name -}}
 {{ $jobName := coalesce (index .Spec.ContainerSpec.Labels "prometheus.name") $serviceName -}}
 {{ $port := index .Spec.ContainerSpec.Labels "prometheus.port" -}}
 {{ $path := index .Spec.ContainerSpec.Labels "prometheus.path" -}}
 {{ $labels := (pickReReplace .Spec.ContainerSpec.Labels "^prometheus\\.labels\\." "")}}
 {{range .NetworksAttachments -}}
-{{if eq .Network.Spec.Name $promnet -}}
+{{if eq .Network.Spec.Name $promnet}}
   - targets: {{.Addresses|toJson|replace "/24" (print ":" $port)}}
     labels:
       job: {{$jobName}}
+      hostname: {{$hostname}}
   {{- range $k, $v := $labels}}
       {{$k}}: "{{$v}}"
   {{- end}}
@@ -47,3 +50,4 @@
 
 {{- end}}{{end}}
 
+# {{now}}

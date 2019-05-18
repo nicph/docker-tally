@@ -74,6 +74,15 @@ func (tpl TemplateClient) funcs() template.FuncMap {
 			return tasks
 		},
 
+		"nodes": func() []swarm.Node {
+			resp, err := cli.NodeList(ctx, types.NodeListOptions{})
+			if err != nil {
+				log.Print(err)
+				return []swarm.Node{}
+			}
+			return resp
+		},
+
 		"networks": func() []types.NetworkResource {
 			resp, err := cli.NetworkList(ctx, types.NetworkListOptions{})
 			if err != nil {
@@ -97,6 +106,15 @@ func (tpl TemplateClient) funcs() template.FuncMap {
 			if err != nil {
 				log.Print(err)
 				return swarm.Service{}
+			}
+			return resp
+		},
+
+		"nodeInspect": func(id string) swarm.Node {
+			resp, _, err := cli.NodeInspectWithRaw(ctx, id)
+			if err != nil {
+				log.Print(err)
+				return swarm.Node{}
 			}
 			return resp
 		},
