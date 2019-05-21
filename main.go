@@ -154,7 +154,7 @@ func main() {
 	f = os.Stdout
 
 	outFile := "stdout"
-	if varOutFile, ok := os.LookupEnv("OUT_FILE"); ok {
+	if varOutFile, ok := os.LookupEnv("TALLY_OUTPUT"); ok {
 		if varOutFile != "-" {
 			f, err = os.Create(varOutFile)
 			if err != nil {
@@ -166,7 +166,7 @@ func main() {
 
 	tplCli := TemplateClient{cli}
 
-	tplFile := os.Getenv("TPL_FILE")
+	tplFile := os.Getenv("TALLY_TEMPLATE")
 	tplName := path.Base(tplFile)
 
 	tpl := template.New(tplName).Funcs(sprig.TxtFuncMap()).Funcs(tplCli.funcs())
