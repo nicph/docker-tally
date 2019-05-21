@@ -27,7 +27,8 @@
 
 {{range tasks -}}
 {{if index .Spec.ContainerSpec.Labels "prometheus.port" -}}
-{{ $hostname:=(nodeInspect .NodeID).Description.Hostname|toPrettyJson}}
+{{if eq .Status.State "running" -}}
+{{ $hostname:=(nodeInspect .NodeID).Description.Hostname|toJson}}
 {{ $serviceName := (serviceInspect .ServiceID).Spec.Name -}}
 {{ $jobName := coalesce (index .Spec.ContainerSpec.Labels "prometheus.name") $serviceName -}}
 {{ $port := index .Spec.ContainerSpec.Labels "prometheus.port" -}}
@@ -48,6 +49,6 @@
 {{end -}}
 {{end -}}
 
-{{- end}}{{end}}
+{{- end}}{{end}}{{end}}
 
 # {{now}}
