@@ -1,7 +1,9 @@
+{{ $promnet:=coalesce (env "TALLY_TPL_NETWORK") "prometheus-net" -}}
 # {{now}}
 # trigger event : {{coalesce .Type "Startup"}} {{.Status}}
+# network: {{$promnet}}
+
 # Services:
-{{ $promnet:="prometheus-net" -}}
 {{ $n:=networkInspect $promnet -}}
 {{range services -}}
 {{if index .Spec.Labels "prometheus.port" -}}
