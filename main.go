@@ -7,11 +7,11 @@ import (
 	"path"
 	"regexp"
 	"text/template"
+	"time"
 
 	"github.com/Masterminds/sprig"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 )
@@ -140,6 +140,43 @@ func (tpl TemplateClient) funcs() template.FuncMap {
 
 }
 
+func debounce(input <-chan events.Message, delay time.Duration, throttle time.Duration) chan events.Message {
+	output := make(chan events.Message)
+
+	go func() {
+		var (
+			lastEvent     events.Message
+			ok            bool
+			delayTimer    <-chan time.Time
+			throttleTimer <-chan time.Time
+		)
+
+		resetAndEmit := func() {
+			delayTimer, throttleTimer = nil, nil
+			output <- lastEvent
+		}
+
+		for {
+			select {
+			case lastEvent, ok = <-input:
+				if !ok {
+					return
+				}
+				delayTimer = time.After(delay)
+				if throttleTimer == nil {
+					throttleTimer = time.After(throttle)
+				}
+			case <-delayTimer:
+				resetAndEmit()
+			case <-throttleTimer:
+				resetAndEmit()
+			}
+		}
+	}()
+
+	return output
+}
+
 func main() {
 
 	cli, err := client.NewClientWithOpts(
@@ -179,18 +216,8 @@ func main() {
 	}
 	log.Printf("Generated on startup in %s", outFile)
 
-	filters := filters.NewArgs()
-	filters.Add("event", "create")
-	filters.Add("event", "remove")
-	filters.Add("event", "destroy")
-	filters.Add("event", "update")
-	filters.Add("type", events.ContainerEventType)
-	filters.Add("type", events.ServiceEventType)
-	filters.Add("type", events.NetworkEventType)
-
-	events, errs := cli.Events(context.Background(), types.EventsOptions{
-		Filters: filters,
-	})
+	events, errs := cli.Events(context.Background(), types.EventsOptions{})
+	events = debounce(events, 1*time.Second, 10*time.Second)
 
 	go func() {
 		for {
