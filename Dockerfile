@@ -16,8 +16,8 @@ COPY --from=builder /docker-tally /
 RUN mkdir /templates
 COPY prometheus.tpl /templates
 
-ENV TPL_FILE=/templates/prometheus.tpl
-ENV OUT_FILE=/output/config.yml
+ENV TALLY_TEMPLATE=/templates/prometheus.tpl
+ENV TALLY_OUTPUT=/output/config.yml
 
 VOLUME ["/output"]
 CMD ["/docker-tally"]
