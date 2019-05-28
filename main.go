@@ -12,6 +12,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 )
@@ -216,7 +217,34 @@ func main() {
 	}
 	log.Printf("Generated on startup in %s", outFile)
 
-	events, errs := cli.Events(context.Background(), types.EventsOptions{})
+	filters := filters.NewArgs()
+	filters.Add("event", "create")
+	filters.Add("event", "destroy")
+	filters.Add("event", "detach")
+	filters.Add("event", "die")
+	filters.Add("event", "disconnect")
+	filters.Add("event", "kill")
+	filters.Add("event", "oom")
+	filters.Add("event", "pause")
+	filters.Add("event", "remove")
+	filters.Add("event", "rename")
+	filters.Add("event", "resize")
+	filters.Add("event", "restart")
+	filters.Add("event", "start")
+	filters.Add("event", "stop")
+	filters.Add("event", "unpause")
+	filters.Add("event", "update")
+	filters.Add("type", events.ContainerEventType)
+	filters.Add("type", events.ServiceEventType)
+	filters.Add("type", events.NetworkEventType)
+	filters.Add("type", events.NodeEventType)
+	filters.Add("type", events.SecretEventType)
+	filters.Add("type", events.ConfigEventType)
+
+	events, errs := cli.Events(context.Background(), types.EventsOptions{
+		Filters: filters,
+	})
+
 	events = debounce(events, 1*time.Second, 10*time.Second)
 
 	go func() {
